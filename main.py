@@ -1,11 +1,20 @@
+import json
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+from mido import MidiFile
+from music_generator import MusicClip
+from converter import converter
 
 
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
-    # Generate the new file here
+    params_file = open("config/setting.json", "r")
+    params = json.load(params_file)
+    params_file.close()
+
+    my_music_clip = MusicClip()
+    mid_file_name = "output.mid"
+    my_music_clip.create_midi_file(mid_file_name)
+
+    mid = MidiFile(mid_file_name)
+    converter(mid)
+
 
