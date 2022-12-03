@@ -37,8 +37,6 @@ class MusicPlayer:
         play_button = Button(window, text='Play', width=10, command=self.play)
         pause_button = Button(window, text='Pause / Resume', width=10, command=self.pause)
         stop_button = Button(window, text='Stop', width=10, command=self.stop)
-        volume_up_button = Button(window, text='+', width=5, command=self.volume_up)
-        volume_down_button = Button(window, text='-', width=5, command=self.volume_down)
         prev_song_button = Button(window, text='<<', width=5, command=self.prev_song)
         next_song_button = Button(window, text='>>', width=5, command=self.next_song)
         # TODO: progress bar not working
@@ -47,7 +45,7 @@ class MusicPlayer:
 
         # at the top of the GUI window: open file and folder buttons
         open_file_button.place(x=100, y=20)
-        open_folder_button.place(x=250, y=20)
+        open_folder_button.place(x=300, y=20)
 
         # the second row of the GUI window
         play_button.place(x=60, y=60)
@@ -55,10 +53,9 @@ class MusicPlayer:
         stop_button.place(x=340, y=60)
 
         # the third row of the GUI window
-        volume_up_button.place(x=40, y=120)
-        volume_down_button.place(x=140, y=120)
-        prev_song_button.place(x=240, y=120)
-        next_song_button.place(x=340, y=120)
+
+        prev_song_button.place(x=100, y=100)
+        next_song_button.place(x=350, y=100)
 
         quit_button.place(x=200, y=400)
 
@@ -76,7 +73,6 @@ class MusicPlayer:
     # 		mixer.music.load(self.music_file)
     # 		mixer.music.play()
 
-
     def load_file(self):
         self.playlist.insert(self.lst_pos, filedialog.askopenfilename())
         print('music file from the loading', self.music_file)
@@ -88,7 +84,7 @@ class MusicPlayer:
         self.lst_pos = self.playlist.size()
         for file in self.dirs:
             if file:
-                if file.endswith('.mp3'):
+                if file.endswith('.wav'):
                     self.playlist.insert(self.lst_pos, source_path + '/' + file)
                     self.musicdirs.append(source_path + '/' + file)
                     self.lst_pos = self.lst_pos + 1
@@ -113,14 +109,7 @@ class MusicPlayer:
                 # Read wave file properties
                 RATE = wf.getframerate()  # Frame rate (frames/second)
                 WIDTH = wf.getsampwidth()  # Number of bytes per sample
-                LEN = wf.getnframes()  # Signal length
                 CHANNELS = wf.getnchannels()  # Number of channels
-
-                print('The file has %d channel(s).' % CHANNELS)
-                print('The file has %d frames/second.' % RATE)
-                print('The file has %d frames.' % LEN)
-                print('The file has %d bytes per sample.' % WIDTH)
-
                 BLOCKLEN = 1000  # Blocksize
 
                 # Set up plotting...
@@ -139,7 +128,7 @@ class MusicPlayer:
                     format=PA_FORMAT,
                     channels=CHANNELS,
                     rate=RATE,
-                    input=False,  # we do not use microphone in this demo
+                    input=False,
                     output=True,
                     frames_per_buffer=1024)
                 # low latency so that plot and output audio are synchronized
@@ -148,7 +137,7 @@ class MusicPlayer:
                 # Get block of samples from wave file
                 input_bytes = wf.readframes(BLOCKLEN)  # binary data
 
-                while len(input_bytes) >= BLOCKLEN * WIDTH:
+                while self.playing_state and len(input_bytes) >= BLOCKLEN * WIDTH:
                     # Convert binary data to number sequence (tuple) - numeric data
                     signal_block = struct.unpack('h' * BLOCKLEN, input_bytes)
 
@@ -209,28 +198,15 @@ class MusicPlayer:
                 mixer.music.play()
                 self.playing_state = True  # else:
 
-    # 	if self.musicdirs[0]:
-    # 		print(self.musicdirs[0])
-    # 		mixer.music.load(self.musicdirs[0])
-    # 		mixer.music.play()
-    # 		self.playing_state = True
-    # 		self.pb.start(1)
-
     def pause(self):
         if self.playing_state:
             mixer.music.pause()
             self.playing_state = False
         else:
             mixer.music.unpause()
-            self.playing_state = False
-
-    def volume_up(self):
-        mixer.music.set_volume(min(1.0, mixer.music.get_volume() + 0.1))
-        # mixer.music.play()
-
-    def volume_down(self):
-        mixer.music.set_volume(max(0.0, mixer.music.get_volume() - 0.1))
-        # mixer.music.play()
+            self.playing_state = True
+            mixer.music.play()
+            # self.play()
 
     def stop(self):
         mixer.music.stop()
