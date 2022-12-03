@@ -1,60 +1,69 @@
 # music_player_v1.py
 
-from tkinter import *
-from tkinter import filedialog
-from pygame import *
-import pygame
-import threading
 import os
+import threading
 import tkinter.ttk as ttk
 import wave
-import pyaudio, struct
-from matplotlib import pyplot
+from tkinter import *
+from tkinter import filedialog
 
-# this is a working music player, but does not show the wave forms...
+import pyaudio
+import struct
+from matplotlib import pyplot
+from pygame import *
+
 
 class MusicPlayer:
     def __init__(self, window):
         window.geometry('500x480')
         window.title('Music Player')
         window.resizable(0, 0)
-        self.lst = Listbox(window, height=10, width=60)
-        self.lst.grid(row=0, column=0)
-        self.scrollbar = Scrollbar(Frame(self.lst), orient=VERTICAL, command=self.lst.yview)
-        self.scrollbar.pack(side=RIGHT, fill=Y)
-        self.lst['yscrollcommand'] = self.scrollbar.set
-        self.scrollbar.grid(row=20, column=2, sticky=(N, S))
-        self.lst.pack()
 
-        # self.lst.pack()
-        # t = threading.Timer(1, self.autoPlay)
-        # t.daemon = True
-        # t.start()
-        quit_button = Button(window, text='Quit', command=root.quit)
-        LoadFile = Button(window, text='Open File', width=10, font=('Times', 10), command=self.load_file)
-        LoadFolder = Button(window, text='Open Dir', width=10, font=('Times', 10), command=self.loadfolder)
-        Play = Button(window, text='Play', width=10, font=('Times', 10), command=self.play)
-        Pause = Button(window, text='Pause / Resume', width=10, font=('Times', 10), command=self.pause)
-        Stop = Button(window, text='Stop', width=10, font=('Times', 10), command=self.stop)
-        VolUp = Button(window, text='+', width=5, font=('Times', 10), command=self.volup)
-        VolDown = Button(window, text='-', width=5, font=('Times', 10), command=self.voldown)
-        PrevSong = Button(window, text='<<', width=5, font=('Times', 10), command=self.prevSong)
-        NextSong = Button(window, text='>>', width=5, font=('Times', 10), command=self.nextSong)
-        self.pb = ttk.Progressbar(window, orient=HORIZONTAL, length=100, mode='determinate')
-        self.pb.pack()
+        # create the playlist
+        self.playlist = Listbox(window, height=10, width=60)
+        self.playlist.grid(row=0, column=0)
+
+        # create the horizontal scrollbar to get a better view of the playlist
+        self.scrollbar = Scrollbar(Frame(self.playlist), orient=VERTICAL, command=self.playlist.yview)
+        self.scrollbar.pack(side=RIGHT, fill=Y)
+        self.playlist['yscrollcommand'] = self.scrollbar.set
+        # TODO: check if the scrollbar is functional
+        self.scrollbar.grid(row=20, column=2, sticky=(N, S))
+        self.playlist.pack()
+
+        quit_button = Button(window, text='Quit', width=7, command=root.quit)
+        open_file_button = Button(window, text='Open File', width=10, command=self.load_file)
+        open_folder_button = Button(window, text='Open Dir', width=10, command=self.load_folder)
+        play_button = Button(window, text='Play', width=10, command=self.play)
+        pause_button = Button(window, text='Pause / Resume', width=10, command=self.pause)
+        stop_button = Button(window, text='Stop', width=10, command=self.stop)
+        volume_up_button = Button(window, text='+', width=5, command=self.volume_up)
+        volume_down_button = Button(window, text='-', width=5, command=self.volume_down)
+        prev_song_button = Button(window, text='<<', width=5, command=self.prev_song)
+        next_song_button = Button(window, text='>>', width=5, command=self.next_song)
+        # TODO: progress bar not working
+        self.progress_bar = ttk.Progressbar(window, orient=HORIZONTAL, length=100, mode='determinate')
+        self.progress_bar.pack()
+
+        # at the top of the GUI window: open file and folder buttons
+        open_file_button.place(x=100, y=20)
+        open_folder_button.place(x=250, y=20)
+
+        # the second row of the GUI window
+        play_button.place(x=60, y=60)
+        pause_button.place(x=200, y=60)
+        stop_button.place(x=340, y=60)
+
+        # the third row of the GUI window
+        volume_up_button.place(x=40, y=120)
+        volume_down_button.place(x=140, y=120)
+        prev_song_button.place(x=240, y=120)
+        next_song_button.place(x=340, y=120)
 
         quit_button.place(x=200, y=400)
-        LoadFile.place(x=5, y=20)
-        LoadFolder.place(x=110, y=20)
-        Play.place(x=220, y=20)
-        Pause.place(x=330, y=20)
-        Stop.place(x=5, y=60)
-        VolUp.place(x=110, y=60)
-        VolDown.place(x=160, y=60)
-        PrevSong.place(x=220, y=60)
-        NextSong.place(x=270, y=60)
-        self.lst.place(x=5, y=120)
-        self.pb.place(x=20, y=300)
+
+        self.playlist.place(x=5, y=160)
+        self.progress_bar.place(x=20, y=340)
         self.music_file = False
         self.playing_state = False
         self.lst_pos = 1
@@ -67,64 +76,30 @@ class MusicPlayer:
     # 		mixer.music.load(self.music_file)
     # 		mixer.music.play()
 
-    def autoPlay(self, pb):
-        if self.playing_state == False:
-            return
-        self.pb['value'] = mixer.music.get_pos() / mixer.music.get_length() * 100
-        time.sleep(1)
-        while pygame.mixer.music.get_busy():
-            pygame.time.Clock().tick(5)
-        if self.musicdirs[0]:
-            self.musicdirs.append(self.musicdirs[0])
-            self.musicdirs = self.musicdirs[1:]
-            mixer.music.queue(self.musicdirs[0])
-            mixer.music.load(self.musicdirs[0])
-            mixer.music.play()
 
     def load_file(self):
-        self.lst.insert(self.lst_pos, filedialog.askopenfilename())
+        self.playlist.insert(self.lst_pos, filedialog.askopenfilename())
         print('music file from the loading', self.music_file)
         # self.lst.insert(self.music_file)
 
-    def loadfolder(self):
-        sourcePath = filedialog.askdirectory()
-        self.dirs = os.listdir(sourcePath)
-        self.lst_pos = self.lst.size()
+    def load_folder(self):
+        source_path = filedialog.askdirectory()
+        self.dirs = os.listdir(source_path)
+        self.lst_pos = self.playlist.size()
         for file in self.dirs:
             if file:
                 if file.endswith('.mp3'):
-                    self.lst.insert(self.lst_pos, sourcePath + '/' + file)
-                    self.musicdirs.append(sourcePath + '/' + file)
+                    self.playlist.insert(self.lst_pos, source_path + '/' + file)
+                    self.musicdirs.append(source_path + '/' + file)
                     self.lst_pos = self.lst_pos + 1
-        self.scrollbar.config(command=self.lst.yview)
+        self.scrollbar.config(command=self.playlist.yview)
         # self.lst.insert(self.music_file)
 
-    def playAll(self):
-        print("Playing file:")
-        self.lst_pos = 0
-        for file in self.lst.get(0, END):
-            print("Playing file:")
-            if file.endswith('.mp3'):
-                print("Playing file:", file)
-                self.lst.selection_clear(0, END)
-                self.lst.selection_set(first=self.lst_pos)
-                self.lst.activate(self.lst_pos)
-                mixer.music.load(file)
-                mixer.music.play()
-                self.playing_state = True
-                # Wait for the music to play before exiting
-                self.lst_pos = self.lst_pos + 1
-                if self.lst_pos > self.lst.size() - 1:
-                    self.lst_pos = 0
-                while mixer.music.get_busy():
-                    pygame.time.Clock().tick(500)
-
     def play(self):
-        #    	print("Playing filesssssss:")
-        if self.lst.curselection():
-            if self.lst.get(self.lst.curselection()):
-                self.lst_pos = self.lst.curselection()
-                self.music_file = self.lst.get(self.lst.curselection())
+        if self.playlist.curselection():
+            if self.playlist.get(self.playlist.curselection()):
+                self.lst_pos = self.playlist.curselection()
+                self.music_file = self.playlist.get(self.playlist.curselection())
 
                 mixer.music.load(self.music_file)
                 print('music_file from the playing button', self.music_file)
@@ -149,11 +124,7 @@ class MusicPlayer:
                 BLOCKLEN = 1000  # Blocksize
 
                 # Set up plotting...
-
                 pyplot.ion()  # Turn on interactive mode so plot gets updated
-
-                fig = pyplot.figure(1)
-
                 [g1] = pyplot.plot([], [])
 
                 g1.set_xdata(range(BLOCKLEN))
@@ -172,9 +143,7 @@ class MusicPlayer:
                     output=True,
                     frames_per_buffer=1024)
                 # low latency so that plot and output audio are synchronized
-
-                # this kind of latency is caused by pyaudio
-                # if frames_per_buffer=128 - noise because the computer could not keep up
+                # choose frames_per_buffer=1024 so that the computer could keep up with the latency caused by pyaudio
 
                 # Get block of samples from wave file
                 input_bytes = wf.readframes(BLOCKLEN)  # binary data
@@ -208,34 +177,34 @@ class MusicPlayer:
     # 	thread.daemon = True
     # 	thread.start()
     # p.start()
-    def prevSong(self):
-        if self.lst.curselection() and self.playing_state == True:
-            if self.lst.get(self.lst.curselection()[0]):
-                self.lst_pos = self.lst.curselection()[0] - 1
+    def prev_song(self):
+        if self.playlist.curselection() and self.playing_state == True:
+            if self.playlist.get(self.playlist.curselection()[0]):
+                self.lst_pos = self.playlist.curselection()[0] - 1
                 if self.lst_pos < 0:
-                    self.lst_pos = self.lst.size() - 1
+                    self.lst_pos = self.playlist.size() - 1
                 print(self.lst_pos)
-                self.lst.selection_clear(0, END)
-                self.lst.selection_set(first=self.lst_pos)
-                self.lst.activate(self.lst_pos)
-                self.lst.index(self.lst_pos)
-                self.music_file = self.lst.get(self.lst.curselection())
+                self.playlist.selection_clear(0, END)
+                self.playlist.selection_set(first=self.lst_pos)
+                self.playlist.activate(self.lst_pos)
+                self.playlist.index(self.lst_pos)
+                self.music_file = self.playlist.get(self.playlist.curselection())
                 mixer.music.load(self.music_file)
                 mixer.music.play()
                 self.playing_state = True
 
-    def nextSong(self):
-        if self.lst.curselection():
-            if self.lst.get(self.lst.curselection()[0]) and self.playing_state == True:
-                self.lst_pos = self.lst.curselection()[0] + 1
-                if self.lst_pos > self.lst.size() - 1:
+    def next_song(self):
+        if self.playlist.curselection():
+            if self.playlist.get(self.playlist.curselection()[0]) and self.playing_state == True:
+                self.lst_pos = self.playlist.curselection()[0] + 1
+                if self.lst_pos > self.playlist.size() - 1:
                     self.lst_pos = 0
                 print(self.lst_pos)
-                self.lst.selection_clear(0, END)
-                self.lst.selection_set(first=self.lst_pos)
-                self.lst.activate(self.lst_pos)
-                self.lst.index(self.lst_pos)
-                self.music_file = self.lst.get(self.lst.curselection())
+                self.playlist.selection_clear(0, END)
+                self.playlist.selection_set(first=self.lst_pos)
+                self.playlist.activate(self.lst_pos)
+                self.playlist.index(self.lst_pos)
+                self.music_file = self.playlist.get(self.playlist.curselection())
                 mixer.music.load(self.music_file)
                 mixer.music.play()
                 self.playing_state = True  # else:
@@ -255,11 +224,11 @@ class MusicPlayer:
             mixer.music.unpause()
             self.playing_state = False
 
-    def volup(self):
+    def volume_up(self):
         mixer.music.set_volume(min(1.0, mixer.music.get_volume() + 0.1))
         # mixer.music.play()
 
-    def voldown(self):
+    def volume_down(self):
         mixer.music.set_volume(max(0.0, mixer.music.get_volume() - 0.1))
         # mixer.music.play()
 
