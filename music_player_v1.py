@@ -7,12 +7,18 @@ import wave
 from tkinter import *
 from tkinter import filedialog
 
+import numpy as np
 import pyaudio
 import struct
 from matplotlib import pyplot
 from pygame import *
+from scipy.signal import detrend
+from matplotlib.animation import FuncAnimation
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
 
 
+chunk = 1024
 class MusicPlayer:
     def __init__(self, window):
         window.geometry('500x480')
@@ -67,6 +73,8 @@ class MusicPlayer:
         self.musicdirs = []
         mixer.init()
 
+        self.y_tmp = np.zeros(chunk)
+
     # def checkNextSong:
     # 	if mixer.music.get_endevent()==1 and self.lst.get(self.lst.curselection()):
     # 		self.music_file=self.lst.get(self.lst.curselection())
@@ -105,6 +113,7 @@ class MusicPlayer:
                 wavfile = self.music_file
                 # Open wave file
                 wf = wave.open(wavfile, 'rb')
+                self.wf = wave.open(wavfile, 'rb')
 
                 # Read wave file properties
                 RATE = wf.getframerate()  # Frame rate (frames/second)
@@ -134,6 +143,7 @@ class MusicPlayer:
                 # low latency so that plot and output audio are synchronized
                 # choose frames_per_buffer=1024 so that the computer could keep up with the latency caused by pyaudio
 
+                # self.visualization(root)
                 # Get block of samples from wave file
                 input_bytes = wf.readframes(BLOCKLEN)  # binary data
 
@@ -211,7 +221,46 @@ class MusicPlayer:
     def stop(self):
         mixer.music.stop()
         self.playing_state = False
-
+    #
+    # def visualization(self, window):
+    #     pyplot.ion()
+    #     # self.fig = pyplot.plot([])
+    #     self.fig = Figure(figsize=(5, 4), dpi=100)
+    #     self.canvas = FigureCanvasTkAgg(figure=self.fig, master=window)  # window = root
+    #     self.canvas.draw()
+    #     self.animation = FuncAnimation(self.canvas, self.update_plot, init_func=self.init_plot, interval=32, blit=True)
+    #
+    # def init_plot(self):
+    #     pyplot.ion()  # Turn on interactive mode so plot gets updated
+    #     [g1] = pyplot.plot([], [])
+    #     # set the axis
+    #     pyplot.ylim(-0.1, 0.1)
+    #
+    #     self.fig.set_xdata(np.linspace(0, 2 * np.pi, chunk))
+    #     self.fig.set_ydata(np.zeros(chunk))
+    #
+    #     # g1.set_xdata(np.linspace(0, 2 * np.pi, chunk))
+    #     # g1.set_ydata(np.zeros(chunk))
+    #
+    # def update_plot(self):
+    #     if self.playing_state is False:  # paused, set the values to be last time's values
+    #         print("set to be last time's")
+    #         y_values = self.y_tmp
+    #     else:
+    #         # TODO: I suppose chunk could be replaced by block
+    #         input_bytes = self.wf.readframes(chunk)
+    #         # signal_block = struct.unpack('h' * chunk, input_bytes)
+    #         signal_block = struct.unpack(str(chunk * 4) + 'B', input_bytes)
+    #         y_detrend = detrend(signal_block)
+    #         yft = np.abs(np.fft.fft(y_detrend))
+    #         y_values = yft[: chunk] / (chunk * chunk * 4)
+    #         ind = np.where(y_values > (np.max(y_values) + np.min(y_values)) / 2)
+    #         y_values[ind[0]] *= 3
+    #         self.y_tmp = y_values
+    #
+    # # def init_axis(self):
+    #
+    #
 
 if __name__ == '__main__':
     root = Tk()
