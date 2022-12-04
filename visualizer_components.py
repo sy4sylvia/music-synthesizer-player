@@ -2,11 +2,6 @@ import librosa.display
 import numpy as np
 import pygame
 
-# min_height = 10
-# max_height = 100
-# min_decibel = -80
-# max_decibel = 0
-
 HOP_LENGTH = 512
 N_FFT = 2048 * 4
 
@@ -34,43 +29,47 @@ class MusicAnalyzer:
     def __init__(self):
         self.freq_idx_ratio = 0  # array for frequencies
         self.time_idx_ratio = 0  # array of time periods
-        self.spectrogram = None  # a matrix that contains decibel values according to frequency and time indexes
+        # a matrix that contains decibel values according to frequency and time indices, dB-scaled spectrogram
+        self.spectrogram = None
 
     def load(self, filename):
-        # getting information from the file
-        # y, 1D array, represents the time when each sample was taken.
+        # y is an 1D array that represents the time when each sample was taken.
         # sample_rate is how much samples are taken per period.
         y, sample_rate = librosa.load(filename)
 
+        # TODO: delete this line from Wiki after the report is complete
         # The Short-time Fourier transform (STFT), is a Fourier-related transform used to determine the sinusoidal
-        # frequency and phase content of local sections of a signal as it changes over time.(Wikipedia)
+        # frequency and phase content of local sections of a signal as it changes over time -- Wikipedia
 
         # getting a matrix which contains amplitude values according to frequency and time indices
-        stft = np.abs(librosa.stft(y, hop_length=HOP_LENGTH, n_fft=N_FFT))
+        amplitude_spectrogram = np.abs(librosa.stft(y, hop_length=HOP_LENGTH, n_fft=N_FFT))
 
-        # converting the matrix to decibel matrix
-        self.spectrogram = librosa.amplitude_to_db(stft, ref=np.max)
+        # converts the amplitude spectrogram to dB-scaled spectrogram
+        self.spectrogram = librosa.amplitude_to_db(amplitude_spectrogram, ref=np.max)
 
-        freqs = librosa.core.fft_frequencies(n_fft=N_FFT)  # getting an array of frequencies
+        freqs = librosa.core.fft_frequencies(n_fft=N_FFT)
 
-        # getting an array of time periodic
-        times = librosa.core.frames_to_time(np.arange(self.spectrogram.shape[1]), sr=sample_rate, hop_length=HOP_LENGTH,
-                                            n_fft=N_FFT)
+        cur_frames = np.arange(self.spectrogram.shape[1])
+        times = librosa.core.frames_to_time(cur_frames, sr=sample_rate, hop_length=HOP_LENGTH, n_fft=N_FFT)
 
         self.time_idx_ratio = len(times) / times[len(times) - 1]
         self.freq_idx_ratio = len(freqs) / freqs[len(freqs) - 1]
 
-    # returning the current decibel according to the indices
+    # returning the current decibel from the dB-scaled spectrogram according to the indices
     def get_decibel(self, target_time, freq):
-        return self.spectrogram[int(freq * self.freq_idx_ratio)][int(target_time * self.time_idx_ratio)]
+        row = int(freq * self.freq_idx_ratio)
+        col = int(target_time * self.time_idx_ratio)
+        return self.spectrogram[row][col]
 
 
-class BasicBar:  # -> AudioBar
+# The frequency bar
+class BasicBar:
     def __init__(self, x, y, freq, color, width=50, min_height=10, max_height=100, min_decibel=-80, max_decibel=0):
         self.x = x
         self.y = y
         self.width = width
-        self.height = min_height  # initial height
+        # set the initial height to be the min height in case no signal has this frequency
+        self.height = min_height
 
         self.color = color
         self.freq = freq
@@ -90,29 +89,25 @@ class BasicBar:  # -> AudioBar
         self.height += speed * delta_time
         self.height = clip(self.min_height, self.max_height, self.height)
 
-    def show_bar(self, window):
-        rect = (self.x, self.y + self.max_height - self.height, self.width, self.height)
-        pygame.draw.rect(window, self.color, rect)
-
 
 class SimpleBar(BasicBar):
     def __init__(self, x, y, rng, color, width=50, min_height=10, max_height=100, min_decibel=-80, max_decibel=0):
         super().__init__(x, y, 0, color, width, min_height, max_height, min_decibel, max_decibel)
 
         self.rng = rng
-        self.avg = 0
+        self.db = 0
 
     def update_all(self, delta_time, time, analyzer):
-        self.avg = 0
-        for i in self.rng:
-            self.avg += analyzer.get_decibel(time, i)
+        self.db = 0
+        for freq in self.rng:
+            self.db += analyzer.get_decibel(time, freq)
 
-        self.avg /= len(self.rng)
-        self.update_bar(delta_time, self.avg)
+        self.db /= len(self.rng)
+        self.update_bar(delta_time, self.db)
 
 
 class RotatedBar(SimpleBar):
-    # There needs to be a default value for the width and the .... etc
+    # default values are added in case these parameters are eliminated
     def __init__(self, x, y, rng, color, angle=0, width=8, min_height=10, max_height=370, min_decibel=-80,
                  max_decibel=0):
         super().__init__(x, y, 0, color, width, min_height, max_height, min_decibel, max_decibel)
@@ -134,7 +129,7 @@ class Rectangle:
         self.width = width
         self.height = height
 
-        # four corners of the rectangle
+        # four corners of the rectangle, later used to draw the polygon
         self.points = []
         self.origin = [self.width / 2, 0]
         self.offset = [self.origin[0] + x, self.origin[1] + y]
@@ -142,14 +137,8 @@ class Rectangle:
         self.rotate_rectangle(0)
 
     def rotate_rectangle(self, angle):
-        template = [
-            (-self.origin[0], self.origin[1]),
-            (-self.origin[0] + self.width, self.origin[1]),
-            (-self.origin[0] + self.width, self.origin[1] - self.height),
-            (-self.origin[0], self.origin[1] - self.height)
-        ]
+        patterns = [(-self.origin[0], self.origin[1]), (-self.origin[0] + self.width, self.origin[1]),
+                    (-self.origin[0] + self.width, self.origin[1] - self.height),
+                    (-self.origin[0], self.origin[1] - self.height)]
 
-        self.points = [convert(rotate_matrix(point, np.radians(angle)), self.offset) for point in template]
-
-    def draw(self, screen):
-        pygame.draw.polygon(screen, (255, 255, 0), self.points)
+        self.points = [convert(rotate_matrix(point, np.radians(angle)), self.offset) for point in patterns]

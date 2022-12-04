@@ -23,7 +23,8 @@ class MusicClip(object):
         self.duration = settings["duration"]
         self.tempo = settings["tempo"]
 
-        self.MyMIDI = MIDIFile(2)  # Create 2 tracks for the music piece, basic and chord.
+        # set the number of tracks to be 2 for the music piece
+        self.MyMIDI = MIDIFile(2)
         self.cur_track_idx = 0
 
     # create_sequence adds the pitch and the duration of each note inside a sequence
@@ -82,7 +83,6 @@ class MusicClip(object):
 
         self.cur_track_idx += 1
 
-    # TODO: put a pin on the chord, does not sound good
     def create_chord_track(self):
         self.initialize_single_track("chords")
         cur_time_stamp = 0
@@ -99,7 +99,6 @@ class MusicClip(object):
                     self.MyMIDI.addNote(
                         track=self.cur_track_idx,
                         channel=0, pitch=pitch, time=cur_time_stamp, duration=2, volume=76)
-                    # why 76
 
                     self.MyMIDI.addControllerEvent(
                         track=self.cur_track_idx,
