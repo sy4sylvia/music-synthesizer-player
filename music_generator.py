@@ -116,7 +116,7 @@ class MusicClip(object):
 
     def create_midi_file(self, filename):
         self.create_basic_track()
-        self.create_basic_track()
+        self.create_chord_track()
 
         # self.create_chord_track()
         with open(filename, "wb") as midi_file:
