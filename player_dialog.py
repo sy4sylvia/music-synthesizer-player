@@ -5,20 +5,13 @@ from tkinter.messagebox import showinfo
 
 
 class OpenFile:
-    def __init__(self):
-        root = tk.Tk()
-        root.title('Open Music File Dialog')
-        root.resizable(False, False)
-        root.geometry('300x150')
-        open_button = ttk.Button(
-            root,
-            text='Open a wav file',
-            command=self.select_file
-        )
+    def __init__(self, window):
+        window.title('Open Music File Dialog')
+        window.geometry('300x150')
+        open_button = ttk.Button(window,text='Open a wav file',command=self.select_file)
         open_button.pack(expand=True)
-        # set the edfault wav file
-        self.file = "wavefiles/sample-12s.wav"
-        root.mainloop()
+        # set the default wav file
+        self.file = "music_clips/major-scale.wav"
 
     def select_file(self):
         filetypes = (('wave files', '*.wav'),)
@@ -27,5 +20,6 @@ class OpenFile:
             title='Open a file',
             initialdir='/',
             filetypes=filetypes)
-        showinfo(message='Please close the window to play the wav file you selected.')
+        showinfo(message='Please close the dialog window to play the wav file you selected.')
+
         self.file = filename
