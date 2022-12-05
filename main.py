@@ -4,9 +4,10 @@ from mido import MidiFile
 from music_generator import MusicClip
 from converter import converter
 
-from music_visualizer import generate_visualizer
-
 from player_dialog import *
+import tkinter as tk
+
+from music_visualizer import generate_visualizer
 
 if __name__ == '__main__':
     params_file = open("config/setting.json", "r")
@@ -16,7 +17,6 @@ if __name__ == '__main__':
     my_music_clip = MusicClip()
     mid_file_name = "output.mid"
     my_music_clip.create_midi_file(mid_file_name)
-    # my_music_clip.create_midi_file("{folder}/output.mid".format(folder="music_clips"))
 
     mid = MidiFile(mid_file_name)
     converter(mid)
@@ -26,6 +26,8 @@ if __name__ == '__main__':
     root.mainloop()
 
     filename = dialog.file
-    print('opened file, ', filename)
+    print('Opened file: ', filename)
 
     generate_visualizer(filename)
+
+    print('Finished visualizing the music clip')

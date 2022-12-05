@@ -34,13 +34,15 @@ def converter(mid_file):
                 start_pos, start_msg = current_notes[msg.channel].pop(msg.note)
 
                 duration = current_time_stamp - start_pos
-
+                # uses a sine wave generator
                 signal_generator = Sine(note_to_freq(msg.note))
                 rendered = signal_generator.to_audio_segment(duration=duration - 50, volume=-20).fade_out(100).fade_in(
                     30)
 
                 output = output.overlay(rendered, start_pos)
 
-                date = datetime.now().strftime("%m%d%Y")
-                output_file_name = "output_" + date + ".wav"
-                output.export(output_file_name, format="wav")
+        # add the date suffix to the name of the output wav file
+        date = datetime.now().strftime("%m%d%Y")
+        output_file_name = "output_" + date + ".wav"
+        # uses the export function from pydub
+        output.export('music_clips/' + output_file_name, format="wav")
