@@ -4,6 +4,7 @@ from tkinter.messagebox import showinfo
 import os
 import random
 
+
 class OpenFile:
     def __init__(self, window):
         window.title('Open Music File Dialog')
@@ -18,7 +19,7 @@ class OpenFile:
         self.file = "music_clips/major-scale.wav"
 
     def select_file(self):
-        filetypes = (('wave files', '*.wav'),)
+        filetypes = (('wav files', '*.wav'),)
 
         filename = fd.askopenfilename(
             title='Open a file',
