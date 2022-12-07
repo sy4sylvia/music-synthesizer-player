@@ -34,12 +34,7 @@ class MusicAnalyzer:
 
     def load(self, filename):
         # y is an 1D array that represents the time when each sample was taken.
-        # sample_rate is how much samples are taken per period.
         y, sample_rate = librosa.load(filename)
-
-        # TODO: delete this line from Wiki after the report is complete
-        # The Short-time Fourier transform (STFT), is a Fourier-related transform used to determine the sinusoidal
-        # frequency and phase content of local sections of a signal as it changes over time -- Wikipedia
 
         # getting a matrix which contains amplitude values according to frequency and time indices
         amplitude_spectrogram = np.abs(librosa.stft(y, hop_length=HOP_LENGTH, n_fft=N_FFT))
@@ -79,7 +74,7 @@ class BasicBar:
 
         self.min_height = min_height
         self.max_height = max_height
-        # TODO: what to do with this ratio?
+
         self.ratio = (self.max_height - self.min_height) / (self.max_decibel - self.min_decibel)
 
     def update_bar(self, delta_time, decibel):
